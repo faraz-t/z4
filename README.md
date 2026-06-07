@@ -16,4 +16,9 @@ python3 -m app.main AAPL
 
 # Example: specific date
 python3 -m app.main TSLA --date 2024-07-13
+
+# Example: Reddit demo
+python3 -m app.reddit_demo
 ```
+
+The Reddit demo in `app/reddit_demo.py` uses PRAW. Replace the placeholder API values in that file with your own Reddit app credentials before running it.
