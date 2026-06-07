@@ -3,8 +3,13 @@
 ## Getting Started
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-python -m z4.main
+python3 -m pip install -r requirements.txt
+```
+
+## Running the Application
+
+```bash
+python3 -m app.main AAPL
 ```

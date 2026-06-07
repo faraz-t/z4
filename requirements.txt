@@ -1,1 +1,1 @@
-# empty
+yfinance>=0.2.60
