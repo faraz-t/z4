@@ -11,5 +11,9 @@ python3 -m pip install -r requirements.txt
 ## Running the Application
 
 ```bash
+# Example: latest stock data
 python3 -m app.main AAPL
+
+# Example: specific date
+python3 -m app.main TSLA --date 2024-07-13
 ```
