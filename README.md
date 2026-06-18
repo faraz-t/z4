@@ -22,3 +22,23 @@ python3 -m app.reddit
 ```
 
 Note: PRAW uses Reddit API credentials to access Reddit data. Replace the placeholder data with your actual credentials locally. 
+
+## LLM Comment Analysis
+
+### Setup
+
+1. Install and start Ollama
+2. Pull the base model
+
+```
+ollama pull gemma4:e4b
+
+ollama create gemma-sentiment-numeric -f app/Modelfile
+```
+
+### Usage
+
+`python3 -m app.run_llm`
+
+Change input/output files in run_llm.py
+It will attempt to append new rows to an existing file first.
