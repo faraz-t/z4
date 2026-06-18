@@ -27,18 +27,19 @@ Note: PRAW uses Reddit API credentials to access Reddit data. Replace the placeh
 
 ### Setup
 
-1. Install and start Ollama
-2. Pull the base model
-
-```
-ollama pull gemma4:e4b
-
-ollama create gemma-sentiment-numeric -f app/Modelfile
-```
+1. Install and start Ollama (the script auto-pulls the model on first run)
 
 ### Usage
 
-`python3 -m app.run_llm`
+```bash
+# Defaults: gemma4:e4b (~8GB VRAM), test set, app/system_prompt.md
+python3 -m app.run_llm
 
-Change input/output files in run_llm.py
-It will attempt to append new rows to an existing file first.
+# Larger model (~16GB VRAM, e.g. RTX 5080) and a custom prompt
+python3 -m app.run_llm --model gemma4:12b --system-prompt app/system_prompt.md \
+  --input "raw data (placeholder)/train_fakecomments.json" \
+  --output "processed data (placeholder)/llm_output_train.csv"
+```
+
+Output fields live in `app/features.yaml` (one entry = one validator + prompt line + CSV
+column). `app/system_prompt.md` holds the model's instructions/tone. The script appends to an existing output file if it exists, otherwise it creates a new one.

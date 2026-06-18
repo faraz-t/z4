@@ -1,37 +1,53 @@
+import argparse
 import json
 import os
 from typing import Optional
 import pandas as pd
-from pydantic import BaseModel, Field
+import yaml
+from pydantic import Field, create_model
 from ollama import Client
 
-# Pydantic schema
-class CommentMetrics(BaseModel):
-    ticker: str = Field(description="Uppercase asset ticker or 'NONE'")
-    sentiment: int = Field(ge=-3, le=3)
-    conviction_level: int = Field(ge=0, le=4)
-    emotional_intensity: int = Field(ge=0, le=4)
-    fear_vs_greed: int = Field(ge=-2, le=2)
-    certainty_of_forecast: int = Field(ge=0, le=4)
-    time_horizon: int = Field(ge=-1, le=4)
-    argument_logic: int = Field(ge=0, le=3)
-    tone_profile: int = Field(ge=-1, le=2)
-    company_fundamentals: int = Field(ge=-2, le=2)
-    technical_chart: int = Field(ge=-2, le=2)
-    suggested_action_aggression: int = Field(ge=0, le=3)
+MODELS = ["gemma4:e4b", "gemma4:12b"]  # e4b: ~8GB VRAM, 12b: ~16GB VRAM
+TYPES = {"int": int, "str": str, "float": float}
+
+
+# Build the validation schema dynamically from the feature config
+def build_schema(features: list):
+    fields = {}
+    for f in features:
+        bounds = {k: f[k] for k in ("min", "max") if k in f}  # min->ge, max->le below
+        ge = {"ge": bounds["min"]} if "min" in bounds else {}
+        le = {"le": bounds["max"]} if "max" in bounds else {}
+        fields[f["name"]] = (TYPES[f["type"]], Field(description=f["desc"], **ge, **le))
+    return create_model("CommentMetrics", **fields)
+
+
+# Render the feature config as a JSON schema matrix for the prompt
+def schema_matrix(features: list) -> str:
+    lines = [f'  "{f["name"]}": "{f["desc"]}"' for f in features]
+    return "Expected Output Schema Matrix:\n{\n" + ",\n".join(lines) + "\n}"
+
+
+# Pull model if it isn't already available locally
+def ensure_model(client: Client, model: str):
+    local = {m.model for m in client.list().models}
+    if model not in local:
+        print(f"Pulling {model} (first run)...")
+        client.pull(model)
 
 
 # Generate Ollama response
-def analyze_single_comment(client: Client, node: dict) -> Optional[dict]:
+def analyze_single_comment(client: Client, node: dict, model: str, system: str, schema) -> Optional[dict]:
     try:
         response = client.generate( # Call model
-            model='gemma-sentiment-numeric',
+            model=model,
+            system=system,
             prompt=f"Analyze the financial context of this text:\n\n\"{node['comment']}\"",
-            format=CommentMetrics.model_json_schema(),
-            options={"temperature": 0.0}
+            format=schema.model_json_schema(),
+            options={"temperature": 0.0, "top_p": 0.1, "seed": 42}
         )
 
-        metrics = CommentMetrics.model_validate_json(response['response']) # Validate the output against pydantic schema
+        metrics = schema.model_validate_json(response['response']) # Validate the output against pydantic schema
 
         return { # Parse non LLM fields separately
             "comment": node["comment"],
@@ -47,21 +63,29 @@ def analyze_single_comment(client: Client, node: dict) -> Optional[dict]:
 
 
 # Run the pipeline
-def run_pipeline(source_json_path: str, target_csv_path: str):
+def run_pipeline(source_json_path: str, target_csv_path: str, model: str, system_prompt_path: str, features_path: str):
     if not os.path.exists(source_json_path):
         print(f"CRITICAL ERROR: Input database '{source_json_path}' not found.")
         return
 
     with open(source_json_path, "r") as f:
         raw_data = json.load(f)
+    with open(system_prompt_path, "r") as f:
+        instructions = f.read()
+    with open(features_path, "r") as f:
+        features = yaml.safe_load(f)
+
+    schema = build_schema(features)
+    system = f"{instructions}\n{schema_matrix(features)}"  # prompt + enforced schema share one source
 
     client = Client()
+    ensure_model(client, model)
     clean_rows = []
 
     print(f"Processing {len(raw_data)} comments one at a time...")
     for i, entry in enumerate(raw_data, start=1):
         print(f"Processing comment {i}/{len(raw_data)}...")
-        result = analyze_single_comment(client, entry)
+        result = analyze_single_comment(client, entry, model, system, schema)
         if result is not None:
             clean_rows.append(result)
 
@@ -79,9 +103,13 @@ def run_pipeline(source_json_path: str, target_csv_path: str):
         print(f"Success: Created fresh repository asset profile. Exported clean metrics straight to '{target_csv_path}'.")
 
 
-# Change input and output files here
 if __name__ == "__main__":
-    INPUT_FILE = "raw data (placeholder)/test_fakecomments.json"
-    OUTPUT_CSV = "processed data (placeholder)/llm_output_test.csv"
+    p = argparse.ArgumentParser(description="Score reddit comments with a local LLM.")
+    p.add_argument("--input", default="raw data (placeholder)/test_fakecomments.json")
+    p.add_argument("--output", default="processed data (placeholder)/llm_output_test.csv")
+    p.add_argument("--model", choices=MODELS, default=MODELS[0])
+    p.add_argument("--system-prompt", default="app/system_prompt.md")
+    p.add_argument("--features", default="app/features.yaml")
+    args = p.parse_args()
 
-    run_pipeline(INPUT_FILE, OUTPUT_CSV)
+    run_pipeline(args.input, args.output, args.model, args.system_prompt, args.features)

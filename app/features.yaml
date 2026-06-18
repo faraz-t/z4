@@ -1,0 +1,61 @@
+# LLM output features:
+# Each entry becomes one Pydantic validator + one line in the prompt schema + one CSV column. Min/max values are omitted for non-int types.
+
+- name: ticker
+  type: str
+  desc: "Uppercase asset ticker or 'NONE'"
+- name: sentiment
+  type: int
+  min: -3
+  max: 3
+  desc: "-3=extremely bearish, -2=bearish, -1=slightly bearish, 0=neutral, +1=slightly bullish, +2=bullish, +3=extremely bullish"
+- name: conviction_level
+  type: int
+  min: 0
+  max: 4
+  desc: "0=No opinion, 1=Weak, 2=Moderate, 3=Strong, 4=Extreme conviction"
+- name: emotional_intensity
+  type: int
+  min: 0
+  max: 4
+  desc: "0=Emotionless/Clinical, 1=Mildly, 2=Moderately, 3=Strongly, 4=Extremely emotional"
+- name: fear_vs_greed
+  type: int
+  min: -2
+  max: 2
+  desc: "-2=Extreme Fear, -1=Fear, 0=Neutral, +1=Greed, +2=Extreme Greed"
+- name: certainty_of_forecast
+  type: int
+  min: 0
+  max: 4
+  desc: "0=Uncertain, 1=Mildly, 2=Moderately, 3=Highly, 4=Extremely certain"
+- name: time_horizon
+  type: int
+  min: -1
+  max: 4
+  desc: "-1=Unknown/Unspecified, 0=Today/Intraday, 1=Short-term/Weeks, 2=Medium-term/Months, 3=Long-term/Year, 4=Multiple years"
+- name: argument_logic
+  type: int
+  min: 0
+  max: 3
+  desc: "0=Illogical/Rant, 1=Slightly flawed, 2=Logical, 3=Very logical"
+- name: tone_profile
+  type: int
+  min: -1
+  max: 2
+  desc: "-1=Unknown, 0=Serious, 1=Mixed/Unclear, 2=Highly sarcastic"
+- name: company_fundamentals
+  type: int
+  min: -2
+  max: 2
+  desc: "-2=Very negative, -1=Negative, 0=Neutral/Unknown, +1=Positive, +2=Very positive"
+- name: technical_chart
+  type: int
+  min: -2
+  max: 2
+  desc: "-2=Very negative, -1=Negative, 0=Neutral/Unknown, +1=Positive, +2=Very positive"
+- name: suggested_action_aggression
+  type: int
+  min: 0
+  max: 3
+  desc: "0=No action/Holding, 1=Mild action, 2=Moderate action, 3=Strong action/High leverage"
