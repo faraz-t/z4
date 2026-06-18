@@ -11,35 +11,35 @@ MODELS = ["gemma4:e4b", "gemma4:12b"]  # e4b: ~8GB VRAM, 12b: ~16GB VRAM
 TYPES = {"int": int, "str": str, "float": float}
 
 
-# Build the validation schema dynamically from the feature config
 def build_schema(features: list):
+    """Build a Pydantic schema from the feature configuration."""
     fields = {}
     for f in features:
-        bounds = {k: f[k] for k in ("min", "max") if k in f}  # min->ge, max->le below
+        bounds = {k: f[k] for k in ("min", "max") if k in f}
         ge = {"ge": bounds["min"]} if "min" in bounds else {}
         le = {"le": bounds["max"]} if "max" in bounds else {}
         fields[f["name"]] = (TYPES[f["type"]], Field(description=f["desc"], **ge, **le))
     return create_model("CommentMetrics", **fields)
 
 
-# Render the feature config as a JSON schema matrix for the prompt
 def schema_matrix(features: list) -> str:
+    """Render the feature config as a schema summary for the prompt."""
     lines = [f'  "{f["name"]}": "{f["desc"]}"' for f in features]
     return "Expected Output Schema Matrix:\n{\n" + ",\n".join(lines) + "\n}"
 
 
-# Pull model if it isn't already available locally
 def ensure_model(client: Client, model: str):
+    """Pull the model if it is not available locally."""
     local = {m.model for m in client.list().models}
     if model not in local:
         print(f"Pulling {model} (first run)...")
         client.pull(model)
 
 
-# Generate Ollama response
 def analyze_single_comment(client: Client, node: dict, model: str, system: str, schema) -> Optional[dict]:
+    """Analyze a single comment and validate the model output."""
     try:
-        response = client.generate( # Call model
+        response = client.generate(
             model=model,
             system=system,
             prompt=f"Analyze the financial context of this text:\n\n\"{node['comment']}\"",
@@ -47,9 +47,9 @@ def analyze_single_comment(client: Client, node: dict, model: str, system: str, 
             options={"temperature": 0.0, "top_p": 0.1, "seed": 42}
         )
 
-        metrics = schema.model_validate_json(response['response']) # Validate the output against pydantic schema
+        metrics = schema.model_validate_json(response['response'])
 
-        return { # Parse non LLM fields separately
+        return {
             "comment": node["comment"],
             "date": node["date"],
             "score": node["score"],
@@ -62,8 +62,8 @@ def analyze_single_comment(client: Client, node: dict, model: str, system: str, 
         return None
 
 
-# Run the pipeline
 def run_pipeline(source_json_path: str, target_csv_path: str, model: str, system_prompt_path: str, features_path: str):
+    """Run the full comment analysis pipeline."""
     if not os.path.exists(source_json_path):
         print(f"CRITICAL ERROR: Input database '{source_json_path}' not found.")
         return
@@ -76,7 +76,7 @@ def run_pipeline(source_json_path: str, target_csv_path: str, model: str, system
         features = yaml.safe_load(f)
 
     schema = build_schema(features)
-    system = f"{instructions}\n{schema_matrix(features)}"  # prompt + enforced schema share one source
+    system = f"{instructions}\n{schema_matrix(features)}"
 
     client = Client()
     ensure_model(client, model)

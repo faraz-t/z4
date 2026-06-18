@@ -15,5 +15,6 @@ def main() -> None:
         print(post.title)
         print(post.score)
 
+
 if __name__ == "__main__":
     main()

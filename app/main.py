@@ -31,6 +31,7 @@ def get_close_for_date(ticker_symbol: str, requested_date: date, max_lookback: i
 
     raise ValueError(f"No market data found for {ticker_symbol} within {max_lookback} days of {requested_date.isoformat()}")
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch a stock price from yfinance.")
     parser.add_argument("ticker", nargs="?", default="AAPL", help="Stock ticker symbol")
@@ -54,6 +55,7 @@ def main() -> None:
         latest_close = get_latest_close(ticker)
 
     print(f"{ticker}: {latest_close:.2f}")
+
 
 if __name__ == "__main__":
     main()
