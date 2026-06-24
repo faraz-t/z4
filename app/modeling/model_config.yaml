@@ -1,0 +1,11 @@
+# Reddit engagement metrics (collected directly, not produced by the LLM).
+engagement_features:
+  - score
+  - upvote_ratio
+
+# Produced by app/build_dataset.py. These are the model's outputs (y).
+# If you change, you also need to update app/yfinance_utils.compute_returns
+targets:
+  - ret_7d
+  - ret_14d
+  - ret_30d

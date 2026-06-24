@@ -108,8 +108,8 @@ if __name__ == "__main__":
     p.add_argument("--input", default="raw data (placeholder)/test_fakecomments.json")
     p.add_argument("--output", default="processed data (placeholder)/llm_output_test.csv")
     p.add_argument("--model", choices=MODELS, default=MODELS[0])
-    p.add_argument("--system-prompt", default="app/system_prompt.md")
-    p.add_argument("--features", default="app/features.yaml")
+    p.add_argument("--system-prompt", default="app/modeling/system_prompt.md")
+    p.add_argument("--features", default="app/modeling/features.yaml")
     args = p.parse_args()
 
     run_pipeline(args.input, args.output, args.model, args.system_prompt, args.features)
