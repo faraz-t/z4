@@ -29,12 +29,10 @@ from app.modeling import yfinance_utils
 APP_DIR = Path(__file__).resolve().parent      # app/modeling/
 PROJECT_ROOT = APP_DIR.parent.parent           # repo root
 
-PROCESSED_DIR = PROJECT_ROOT / "data" / "fake" / "processed"
-TRAIN_CSV = PROCESSED_DIR / "llm_output_train.csv"
-TEST_CSV = PROCESSED_DIR / "llm_output_test.csv"
+PROCESSED_DIR = PROJECT_ROOT / "data" / "real" / "processed"
 
-DATASET_TRAIN_OUT = PROCESSED_DIR / "dataset_train.csv"
-DATASET_TEST_OUT = PROCESSED_DIR / "dataset_test.csv"
+INPUT_CSV = PROCESSED_DIR / "llm_output.csv"
+DATASET_OUT = PROCESSED_DIR / "dataset.csv"
 
 PRICE_CACHE_PATH = PROCESSED_DIR / "price_cache.json"
 
@@ -129,21 +127,18 @@ def attach_returns(df: pd.DataFrame, cache: dict[str, Any]) -> pd.DataFrame:
 def main() -> None:
     cache = _load_price_cache(PRICE_CACHE_PATH)
 
-    print(f"Loading {TRAIN_CSV.name} and {TEST_CSV.name}...")
-    train_df = pd.read_csv(TRAIN_CSV)
-    test_df = pd.read_csv(TEST_CSV)
+    print(f"Loading {INPUT_CSV.name}...")
+    df = pd.read_csv(INPUT_CSV)
 
-    print("Attaching stock returns to train set...")
-    train_df = attach_returns(train_df, cache)
-    print("Attaching stock returns to test set...")
-    test_df = attach_returns(test_df, cache)
+    print("Attaching stock returns...")
+    df = attach_returns(df, cache)
 
     _save_price_cache(cache, PRICE_CACHE_PATH)
 
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    train_df.to_csv(DATASET_TRAIN_OUT, index=False)
-    test_df.to_csv(DATASET_TEST_OUT, index=False)
-    print(f"Saved merged datasets to {DATASET_TRAIN_OUT.name} / {DATASET_TEST_OUT.name}")
+    df.to_csv(DATASET_OUT, index=False)
+
+    print(f"Saved merged dataset to {DATASET_OUT}")
     print("Next: python -m app.modeling.train_model")
 
 
