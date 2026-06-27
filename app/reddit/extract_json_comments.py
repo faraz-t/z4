@@ -9,8 +9,8 @@ import pandas as pd
 
 APP_DIR = Path(__file__).resolve().parent
 
-DEFAULT_INPUT_DIR = APP_DIR / "raw"
-DEFAULT_OUTPUT = APP_DIR / "processed" / "reddit_comments.csv"
+DEFAULT_INPUT_DIR = APP_DIR.parent.parent / "data" / "reddit" / "raw"
+DEFAULT_OUTPUT = APP_DIR.parent.parent / "data" / "reddit" / "processed" / "reddit_comments.csv"
 
 CSV_COLUMNS = [
     "id",
